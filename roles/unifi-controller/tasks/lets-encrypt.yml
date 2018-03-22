@@ -1,0 +1,75 @@
+---
+
+- name: install software-properties-common (ppa dependency)
+  apt:
+    name: software-properties-common
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+
+- name: add apt ppa required for certbot
+  apt_repository:
+    repo: 'ppa:certbot/certbot'
+
+- name: install certbot
+  apt:
+    name: certbot
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+
+- name: install bc (math for calculating cert remaining time)
+  apt:
+    name: bc
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+
+# Script checks certificate expiration, and (if necessary), renews, installs to unifi, and restarts unifi.
+- name: copy certificate installation script
+  template:
+    src: letsencrypt.sh.j2
+    dest: /root/letsencrypt.sh
+    owner: root
+    group: root
+    mode: 0500
+  tags:
+    - lets-encrypt-script
+
+# Helper script in case we need to debug certificates, allows easy purging of certificate from letsencrypt dir.
+- name: copy purge certificate utility script for debugging
+  template:
+    src: purge_certificate.sh.j2
+    dest: /root/purge_certificate.sh
+    owner: root
+    group: root
+    mode: 0500
+
+# If this is the first runthrough, the cert directory doesn't exist yet.
+- name: check if live cert directory exists
+  stat: path=/etc/letsencrypt/live/{{ fqdn }}/fullchain.pem
+  register: cert_file
+
+# Better to fail fast here rather than later on from deep inside the letsencrypt script.
+- name: perform test dns lookup of {{ fqdn }}
+  command: dig {{ fqdn }} +short
+  changed_when: false
+  register: fqdn_dns_result
+
+- name: fail if dns lookup of {{ fqdn }} is not {{ public_ip }}
+  fail:
+    msg: dns lookup of {{ fqdn }} was not equal to {{ public_ip }}, got '{{ fqdn_dns_result.stdout }}' instead
+  when: fqdn_dns_result.stdout != public_ip
+
+- name: run initial certificate installation script
+  command: /root/letsencrypt.sh --production_certificate true
+  when: cert_file.stat.exists == False
+
+# TODO: Send email on success or failure
+- name: schedule cron job to check certificate expiry every night and renew if needed
+  cron:
+    name: nightly certificate expiry check and renew if needed
+    user: root
+    minute: 00
+    hour: 12
+    job: /root/letsencrypt.sh --renew_threshold_days_remaining 28 --production_certificate true

@@ -1,0 +1,69 @@
+---
+
+- name: install software-properties-common (ppa dependency)
+  apt:
+    name: software-properties-common
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+
+- name: add apt ppa required for borg
+  apt_repository:
+    repo: 'ppa:costamagnagianfranco/borgbackup'
+
+- name: install borgbackup
+  apt:
+    name: borgbackup
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+
+# Do the backups as root rather than unifi, because it's more likely that the unifi user
+# will be compromised, since that's what the unifi controller runs as.
+# If the unifi user is compromised, at least the attacker won't be able to manipulate backups.
+- name: write borg backup passphrase to text file
+  copy:
+    content: "{{ borg_backup_repo_passphrase }}"
+    dest: "/root/.borg-passphrase"
+    owner: root
+    group: root
+    mode: 0400
+
+- name: add backup server to known_hosts
+  known_hosts:
+    name: "{{ backup_host }}"
+    key: "{{ backup_host_key }}"
+    state: present
+
+# Actually creating the borg backup repo is a critical administrative task and
+# is outside the scope of this automation.
+- name: verify that borg backup repo exists on server
+  shell: >
+    BORG_PASSCOMMAND="cat /root/.borg-passphrase"
+    BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
+    borg info --remote-path=borg1
+    {{ backup_host_username | quote }}@{{ backup_host | quote }}:{{ backup_borg_repo_path | quote }}
+  changed_when: false
+
+- name: get unifi user homedir to locate autobackup files
+  shell: "getent passwd unifi | cut -d: -f6"
+  register: unifi_user_homedir
+  changed_when: false
+
+# TODO: Move this into a separate script and do more fun things,
+# like send email notifications on success/failure.
+- name: schedule nightly borg backup of unifi autobackup directory
+  cron:
+    name: nightly borg backup
+    user: root
+    minute: 30
+    hour: 11
+    job: >
+      cd {{ unifi_user_homedir.stdout }}/backup/autobackup &&
+      BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
+      BORG_PASSCOMMAND="cat /root/.borg-passphrase"
+      borg create --remote-path=borg1 --stats --compression none
+      {{ backup_host_username | quote }}@{{ backup_host | quote }}:{{ backup_borg_repo_path | quote }}::{now:\%Y\%m\%dT\%H\%M\%S} .
+      2>&1 | /usr/bin/logger -t unifi_borg_backup
+
+# TODO: Schedule monthly-ish borg prune to delete old backups.

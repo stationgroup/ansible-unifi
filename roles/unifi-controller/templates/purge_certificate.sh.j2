@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# This file is maintained by Ansible
+
+set -e
+
+letsencrypt_dir=/etc/letsencrypt
+
+rm -rf $letsencrypt_dir/live/{{ fqdn }}*
+rm -rf $letsencrypt_dir/archive/{{ fqdn }}*
+rm -rf $letsencrypt_dir/renewal/{{ fqdn }}*

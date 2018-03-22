@@ -1,0 +1,11 @@
+---
+
+- import_tasks: configure-firewall.yml
+  tags:
+    - configure-firewall
+- import_tasks: install-controller.yml
+  tags:
+    - install-controller
+- import_tasks: lets-encrypt.yml
+  tags:
+    - lets-encrypt

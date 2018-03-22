@@ -1,0 +1,36 @@
+---
+
+# MongoDB isn't kept up to date in the official Ubuntu mirrors.  Need to add the MongoDB mirrors.
+- name: add apt key for mongodb 3.4 mirrors
+  apt_key:
+    id: 0C49F3730359A14518585931BC711F9BA15703C6
+    keyserver: keyserver.ubuntu.com
+
+- name: add mongodb 3.4 apt repository
+  apt_repository:
+    repo: >
+      deb http://repo.mongodb.org/apt/{{ ansible_distribution|lower }}
+      {{ ansible_distribution_release }}/mongodb-org/3.4
+      {{ 'main' if ansible_distribution == 'debian' else 'multiverse' }}
+    update_cache: yes
+
+- name: install mongodb 3.4
+  apt:
+    name: mongodb-org
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+  environment:
+    # Do not start at the end of install, it is started automatically when Unifi controller starts.
+    # The system mongodb service will be disabled (see next task) from starting on its own.
+    RUNLEVEL: 1
+
+- name: ensure system mongodb service is not running
+  service:
+    name: mongod
+    state: stopped
+
+- name: disable system mongodb service, since it will be started automatically by unifi controller
+  service:
+    name: mongod
+    enabled: no

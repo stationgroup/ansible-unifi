@@ -1,0 +1,12 @@
+---
+# Playbook to generate an ssh key and display the public key, so it can be installed on the backup server.
+
+- name: Generate ssh key for {{ target }}
+  hosts: '{{ target }}'
+  gather_facts: yes
+
+  tasks:
+  - import_role:
+      name: generate-ssh-key
+    tags:
+      - generate-ssh-key

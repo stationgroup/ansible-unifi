@@ -1,0 +1,53 @@
+---
+
+- name: install haveged, provides entropy for fast unifi controller startup
+  apt:
+    name: haveged
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+
+- name: install openjdk-8-jre-headless, required for unifi controller
+  apt:
+    name: openjdk-8-jre-headless
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+
+# Download directly from ubiquiti website and installed with dpkg, not using an apt source.
+# This is so we can pick versions that might not yet be in an apt source, per Ubiquiti's release process.
+- name: Download and verify unifi controller {{ unifi_version }}
+  get_url:
+    url: https://dl.ubnt.com/unifi/{{unifi_version}}/unifi_sysvinit_all.deb
+    dest: /root/unifi_sysvinit_all_{{ unifi_version }}.deb
+    checksum: sha256:{{ unifi_sha256 }}
+
+- name: install unifi controller {{unifi_version}}
+  apt:
+    deb: /root/unifi_sysvinit_all_{{ unifi_version }}.deb
+  environment:
+      # Do not start automatically at the end of install, so we can explicitly control its state.
+      RUNLEVEL: 1
+
+- name: start unifi controller
+  service:
+    name: unifi
+    state: started
+  notify:
+    - wait for unifi controller to be healthy
+
+# It would be nice if we could just run a single handler rather than all of them, but
+# that functionality doesn't exist yet. See:
+# https://github.com/ansible/ansible/issues/10829
+- meta: flush_handlers
+
+- name: set public ip in unifi configuration file to {{ public_ip }}
+  lineinfile:
+    dest: /usr/lib/unifi/data/system.properties
+    regexp: 'system_ip=.*'
+    line: 'system_ip={{public_ip}}'
+    state: present
+  notify:
+    - restart unifi controller
+
+- meta: flush_handlers

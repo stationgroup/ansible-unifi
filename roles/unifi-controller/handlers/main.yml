@@ -1,0 +1,13 @@
+---
+
+- name: restart unifi controller
+  service:
+    name: unifi
+    state: restarted
+  notify:
+    - wait for unifi controller to be healthy
+
+- name: wait for unifi controller to be healthy
+  wait_for:
+    timeout: 60
+    port: 8443

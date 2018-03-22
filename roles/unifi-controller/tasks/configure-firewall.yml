@@ -1,0 +1,48 @@
+---
+
+- name: allow tcp port 22 (ssh)
+  ufw:
+    rule: allow
+    port: 22
+    proto: tcp
+
+- name: allow tcp port 80 (let's encrypt challenges)
+  ufw:
+    rule: allow
+    port: 80
+    proto: tcp
+
+- name: allow tcp port 8443 (unifi controller https, web ui)
+  ufw:
+    rule: allow
+    port: 8443
+    proto: tcp
+
+- name: allow tcp port 8080 (unifi controller http, device inform)
+  ufw:
+    rule: allow
+    port: 8080
+    proto: tcp
+
+- name: allow tcp port 8880 (unifi controller http captive portal)
+  ufw:
+    rule: allow
+    port: 8880
+    proto: tcp
+
+- name: allow tcp port 8843 (unifi controller https captive portal)
+  ufw:
+    rule: allow
+    port: 8843
+    proto: tcp
+
+- name: allow udp port 3478 (unifi stun server)
+  ufw:
+    rule: allow
+    port: 3478
+    proto: udp
+
+- name: set default deny and enable firewall
+  ufw:
+    state: enabled
+    policy: deny

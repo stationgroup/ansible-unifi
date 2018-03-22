@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# This file is maintained by Ansible
+
+# Send all output to syslog
+# See https://urbanautomaton.com/blog/2014/09/09/redirecting-bash-script-output-to-syslog/
+exec 1> >(logger -s -t $(basename $0)) 2>&1
+
+set -e
+
+# Defaults unless specified on command line.
+production_certificate=false
+renew_threshold_days_remaining=28
+
+while [[ "$#" > 1 ]]; do case $1 in
+    --production_certificate) production_certificate="$2";;
+    --renew_threshold_days_remaining) renew_threshold_days_remaining="$2";;
+    *) break;;
+  esac; shift; shift
+done
+
+echo "production_certificate: $production_certificate"
+echo "renew_threshold_days_remaining: $renew_threshold_days_remaining"
+
+letsencrypt_dir=/etc/letsencrypt/live/{{ fqdn }}
+
+echo
+if [ -d "$letsencrypt_dir" ]; then
+    # Certificate exists
+
+    echo "Found $letsencrypt_dir"
+    echo
+
+    echo "Existing certificate:"
+    openssl x509 -dates -noout < $letsencrypt_dir/cert.pem
+    echo
+
+    certificate_date=$(openssl x509 -in $letsencrypt_dir/cert.pem -text -noout | grep "Not After" | cut -c 25-)
+    certificate_date_formatted=$(date -d "$certificate_date" +%s)
+    today_date_formatted=$(date -d "now" +%s)
+    days_remaining_math_equation=$(echo "( $certificate_date_formatted - $today_date_formatted ) / 86400")
+    remaining_days_valid=$(echo "$days_remaining_math_equation" | bc)
+    echo "Remaining days valid:"
+    echo $remaining_days_valid
+
+    if [ "$remaining_days_valid" -gt "$renew_threshold_days_remaining" ]; then
+        # No need to renew
+        echo "Nothing to do, existing certificate valid for $remaining_days_valid days, \
+higher than renew threshold $renew_threshold_days_remaining days"
+        echo
+        exit 0
+    else
+        echo "Certificate must be renewed, valid for $remaining_days_valid more days, \
+less than renew threshold $renew_threshold_days_remaining days"
+        echo
+    fi
+
+else
+    echo "No existing certificate found, this must be the first run."
+fi
+
+echo
+if [[ $production_certificate = true ]]; then
+    echo "Generating production certificate..."
+    certbot certonly -n -d {{ fqdn }} -m {{ letsencrypt_email }} --agree-tos --standalone
+    echo "Done generating production certificate"
+else
+    echo "Generating test certificate..."
+    certbot certonly --test-cert -n -d {{ fqdn }} -m {{ letsencrypt_email }} --agree-tos --standalone
+    echo "Done generating test certificate"
+fi
+
+echo
+echo "New certificate:"
+openssl x509 -dates -noout < $letsencrypt_dir/cert.pem
+
+echo
+echo "Transforming certificate"
+sudo openssl pkcs12 -export -in $letsencrypt_dir/fullchain.pem \
+-inkey $letsencrypt_dir/privkey.pem -out $letsencrypt_dir/cert.p12 -name unifi -password pass:temppass
+echo "Certificate transformed"
+
+echo
+echo "Stopping unifi..."
+systemctl stop unifi.service
+echo "Unifi stopped"
+
+echo
+echo "Importing certificate into unifi..."
+sudo keytool -noprompt -importkeystore -deststorepass aircontrolenterprise \
+-destkeypass aircontrolenterprise -destkeystore /usr/lib/unifi/data/keystore \
+-srckeystore $letsencrypt_dir/cert.p12 -srcstoretype PKCS12 -srcstorepass temppass -alias unifi
+echo "Certificate imported into unifi"
+
+echo
+echo "Starting unifi..."
+systemctl start unifi.service
+echo "Unifi started"
+echo "Done"
+echo

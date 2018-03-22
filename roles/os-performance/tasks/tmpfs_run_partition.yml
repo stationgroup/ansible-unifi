@@ -1,0 +1,10 @@
+---
+
+# Enlarge the /run partition, since Unifi uses it as temporary storage when creating backups.
+- name: enlarge /run partition to {{ run_dir_size }}
+  mount:
+    path: /run
+    src: tmpfs
+    fstype: tmpfs
+    opts: nosuid,noexec,size={{ run_dir_size }}
+    state: mounted

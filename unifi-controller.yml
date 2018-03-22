@@ -1,0 +1,43 @@
+---
+# Playbook to configure a Debian-based system to run the Unifi controller, including borg backups
+# of the full controller as well as all hosted sites.
+
+- name: Apply unifi configuration to {{ target }}
+  hosts: '{{ target }}'
+  gather_facts: yes
+
+  tasks:
+  - import_role:
+      name: hostname
+    tags:
+      - hostname
+
+  - import_role:
+      name: os-performance
+    tags:
+      - os-performance
+
+  - import_role:
+      name: mongodb
+    tags:
+      - mongodb
+
+  - import_role:
+      name: unifi-controller
+    tags:
+      - unifi-controller
+
+  - import_role:
+      name: unifi-backups
+    tags:
+      - unifi-backups
+
+  - import_role:
+      name: apt-convenience-packages
+    tags:
+      - apt-convenience-packages
+
+  - import_role:
+      name: apt-upgrade
+    tags:
+      - apt-upgrade
