@@ -18,23 +18,15 @@
     update_cache: yes
     cache_valid_time: "{{ apt_cache_valid_time }}"
 
-- name: install bc (math for calculating cert remaining time)
-  apt:
-    name: bc
-    state: present
-    update_cache: yes
-    cache_valid_time: "{{ apt_cache_valid_time }}"
-
-# Script checks certificate expiration, and (if necessary), renews, installs to unifi, and restarts unifi.
+# Runs using letsencrypt's "deploy_hook" functionality, to format the certificate for the Unifi Controller,
+# import the certificate, and then restart the Unifi Controller
 - name: copy certificate installation script
   template:
-    src: letsencrypt.sh.j2
-    dest: /root/letsencrypt.sh
+    src: unifi_deploy_hook.sh.j2
+    dest: /etc/letsencrypt/renewal-hooks/deploy/unifi_deploy_hook.sh
     owner: root
     group: root
     mode: 0500
-  tags:
-    - lets-encrypt-script
 
 # Helper script in case we need to debug certificates, allows easy purging of certificate from letsencrypt dir.
 - name: copy purge certificate utility script for debugging
@@ -50,7 +42,7 @@
   stat: path=/etc/letsencrypt/live/{{ fqdn }}/fullchain.pem
   register: cert_file
 
-# Better to fail fast here rather than later on from deep inside the letsencrypt script.
+# Better to fail fast here, rather than later when actually trying to get a certificate
 - name: perform test dns lookup of {{ fqdn }}
   command: dig {{ fqdn }} +short
   changed_when: false
@@ -61,15 +53,8 @@
     msg: dns lookup of {{ fqdn }} was not equal to {{ public_ip }}, got '{{ fqdn_dns_result.stdout }}' instead
   when: fqdn_dns_result.stdout != public_ip
 
-- name: run initial certificate installation script
-  command: /root/letsencrypt.sh --production_certificate true
+# Note: Add "--test-cert" to this command to test using Let's Encrypt staging server instead (no rate limit).
+- name: get initial letsencrypt certificate for {{ fqdn }}
+  command: certbot certonly -n -d {{ fqdn }} -m {{ letsencrypt_email }} --agree-tos --standalone
   when: cert_file.stat.exists == False
-
-# TODO: Send email on success or failure
-- name: schedule cron job to check certificate expiry every night and renew if needed
-  cron:
-    name: nightly certificate expiry check and renew if needed
-    user: root
-    minute: 00
-    hour: 12
-    job: /root/letsencrypt.sh --renew_threshold_days_remaining 28 --production_certificate true
+  notify: run letsencrypt deploy hook

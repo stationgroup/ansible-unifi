@@ -11,3 +11,7 @@
   wait_for:
     timeout: 60
     port: 8443
+
+# Must be run once, manually, after doing the initial certificate request
+- name: run letsencrypt deploy hook
+  command: /etc/letsencrypt/renewal-hooks/deploy/unifi_deploy_hook.sh
