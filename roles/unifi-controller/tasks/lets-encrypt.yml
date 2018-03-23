@@ -47,11 +47,12 @@
   command: dig {{ fqdn }} +short
   changed_when: false
   register: fqdn_dns_result
+  when: cert_file.stat.exists == False
 
 - name: fail if dns lookup of {{ fqdn }} is not {{ public_ip }}
   fail:
     msg: dns lookup of {{ fqdn }} was not equal to {{ public_ip }}, got '{{ fqdn_dns_result.stdout }}' instead
-  when: fqdn_dns_result.stdout != public_ip
+  when: cert_file.stat.exists == False and fqdn_dns_result.stdout != public_ip
 
 # Note: Add "--test-cert" to this command to test using Let's Encrypt staging server instead (no rate limit).
 - name: get initial letsencrypt certificate for {{ fqdn }}
