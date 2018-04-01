@@ -1,5 +1,17 @@
 # Change Log
 
+## [1.5.0] - 2018-03-31
+### Changed
+- Disable chatty firewall logging
+
+## [1.4.0] - 2018-03-31
+### Changed
+- Updated unifi controller on unifi-beta-01 to version 5.8.10
+
+## [1.3.0] - 2018-03-25
+### Changed
+- Reverted public IPs of hosts in the field since they were incompatible with STUN.
+
 ## [1.2.0] - 2018-03-23
 ### Changed
 - Updated DNS check to only run if we are generating initial certificate.

@@ -46,3 +46,7 @@
   ufw:
     state: enabled
     policy: deny
+
+- name: Disable ufw logging
+  ufw:
+    logging: off
