@@ -12,6 +12,12 @@
     port: 80
     proto: tcp
 
+- name: allow tcp port 443 (let's encrypt challenges)
+  ufw:
+    rule: allow
+    port: 443
+    proto: tcp
+
 - name: allow tcp port 8443 (unifi controller https, web ui)
   ufw:
     rule: allow

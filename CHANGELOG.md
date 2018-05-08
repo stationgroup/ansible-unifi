@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.6.0] - 2018-05-07
+### Changed
+- Add fqdn to /etc/hosts
+- Open port 443 for Let's Encrypt TLS challenges (for renewals)
+- Update unifi controller versions
+
 ## [1.5.0] - 2018-03-31
 ### Changed
 - Disable chatty firewall logging
