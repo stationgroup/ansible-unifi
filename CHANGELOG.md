@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.7.0] - 2018-05-11
+### Changed
+- Update unifi controller on unifi-beta-01 to version 5.8.16
+
 ## [1.6.0] - 2018-05-07
 ### Changed
 - Add fqdn to /etc/hosts
