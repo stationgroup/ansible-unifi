@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.8.0] - 2018-05-28
+### Changed
+- Update unifi controller on unifi-beta-01 to version 5.8.19
+- Update unifi controller on unifi-prod-01 to version 5.7.28
+
 ## [1.7.0] - 2018-05-11
 ### Changed
 - Update unifi controller on unifi-beta-01 to version 5.8.16
