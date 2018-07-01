@@ -1,0 +1,81 @@
+# {{ ansible_managed }}
+
+# Proxy https://{{ hostname }} to Unifi
+
+upstream unifi_web {
+  server 127.0.0.1:8443;
+}
+
+upstream unifi_inform {
+  server 127.0.0.1:8080;
+}
+
+server {
+  listen 443 ssl http2;
+
+  include /etc/nginx/nginx-ssl.conf;
+
+  server_name {{ hostname }};
+
+  access_log /var/log/unifi/unifi-web-nginx-access.log;
+  error_log /var/log/unifi/unifi-web-nginx-error.log;
+
+  location ^~ /.well-known/acme-challenge/ {
+      default_type "text/plain";
+      root /var/www/letsencrypt;
+  }
+
+  location /robots.txt {return 200 "User-agent: *\nDisallow: /\n";}
+
+  location / {
+    proxy_pass https://unifi_web;
+    proxy_redirect  https://unifi_web/ /;
+    proxy_buffering off;
+
+    proxy_read_timeout 60s;
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+  }
+}
+
+server {
+  listen 80;
+
+  server_name {{ hostname }};
+
+  access_log /var/log/unifi/unifi-inform-nginx-access.log;
+  error_log /var/log/unifi/unifi-inform-nginx-error.log;
+
+  location /robots.txt {return 200 "User-agent: *\nDisallow: /\n";}
+
+  location /inform {
+    proxy_pass http://unifi_inform;
+    proxy_redirect  http://unifi_inform/ /;
+    proxy_buffering off;
+
+    proxy_read_timeout 60s;
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+  }
+
+  location ^~ /.well-known/acme-challenge/ {
+      default_type "text/plain";
+      root /var/www/letsencrypt;
+  }
+
+  location / {
+    return 301 https://{{ hostname }}$request_uri;
+  }
+}

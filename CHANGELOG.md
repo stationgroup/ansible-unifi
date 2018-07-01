@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.0.0] - 2018-06-30
+### Changed
+- Reorganized to more closely follow Ansible conventions
+- Update beta and prod controllers to 5.8.24
+- Put controllers behind nginx
+
 ## [1.8.0] - 2018-05-28
 ### Changed
 - Update unifi controller on unifi-beta-01 to version 5.8.19

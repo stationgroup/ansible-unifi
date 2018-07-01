@@ -1,0 +1,21 @@
+---
+
+- name: copy unifi nginx configuration to sites-available
+  template:
+    src: nginx/unifi_nginx.conf.j2
+    dest: /etc/nginx/sites-available/unifi_nginx.conf
+    owner: root
+    group: nginx
+    mode: 0440
+  notify:
+    - restart nginx
+
+- name: symlink unifi nginx configuration into sites-enabled
+  file:
+    src: /etc/nginx/sites-available/unifi_nginx.conf
+    dest: /etc/nginx/sites-enabled/unifi_nginx.conf
+    owner: root
+    group: nginx
+    state: link
+  notify:
+    - restart nginx

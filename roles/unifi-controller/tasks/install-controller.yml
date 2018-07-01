@@ -5,14 +5,14 @@
     name: haveged
     state: present
     update_cache: yes
-    cache_valid_time: "{{ apt_cache_valid_time }}"
+    cache_valid_time: "{{ apt_cache_valid_time_seconds }}"
 
 - name: install openjdk-8-jre-headless, required for unifi controller
   apt:
     name: openjdk-8-jre-headless
     state: present
     update_cache: yes
-    cache_valid_time: "{{ apt_cache_valid_time }}"
+    cache_valid_time: "{{ apt_cache_valid_time_seconds }}"
 
 # Download directly from ubiquiti website and installed with dpkg, not using an apt source.
 # This is so we can pick versions that might not yet be in an apt source, per Ubiquiti's release process.
@@ -41,11 +41,16 @@
 # https://github.com/ansible/ansible/issues/10829
 - meta: flush_handlers
 
-- name: set public ip in unifi configuration file to {{ public_ip }}
+- name: get dns A record for hostname
+  command: dig {{ hostname }} +short
+  changed_when: false
+  register: hostname_dns_result
+
+- name: set public ip in unifi configuration file
   lineinfile:
     dest: /usr/lib/unifi/data/system.properties
     regexp: 'system_ip=.*'
-    line: 'system_ip={{public_ip}}'
+    line: 'system_ip={{ hostname_dns_result.stdout }}'
     state: present
   notify:
     - restart unifi controller

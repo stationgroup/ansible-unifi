@@ -1,0 +1,5 @@
+[unifi-beta]
+unifi-beta-01.svc1.xyz
+
+[unifi:children]
+unifi-beta

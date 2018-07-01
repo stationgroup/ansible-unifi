@@ -1,0 +1,16 @@
+---
+
+- import_tasks: configure-nginx-firewall.yml
+  tags: configure-nginx-firewall
+
+- import_tasks: install-nginx.yml
+  tags: install-nginx
+
+- import_tasks: configure-nginx-common.yml
+  tags: configure-nginx-common
+
+- import_tasks: start-nginx.yml
+  tags: start-nginx
+
+- import_tasks: letsencrypt.yml
+  tags: letsencrypt

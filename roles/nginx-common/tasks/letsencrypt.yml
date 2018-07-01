@@ -1,11 +1,20 @@
 ---
 
+- name: create webroot directory for letsencrypt challenges
+  file:
+    path: /var/www/letsencrypt/
+    state: directory
+    recurse: yes
+    owner: root
+    group: nginx
+    mode: 0750
+
 - name: install software-properties-common (ppa dependency)
   apt:
     name: software-properties-common
     state: present
     update_cache: yes
-    cache_valid_time: "{{ apt_cache_valid_time }}"
+    cache_valid_time: "{{ apt_cache_valid_time_seconds }}"
 
 - name: add apt ppa required for certbot
   apt_repository:
@@ -16,14 +25,13 @@
     name: certbot
     state: present
     update_cache: yes
-    cache_valid_time: "{{ apt_cache_valid_time }}"
+    cache_valid_time: "{{ apt_cache_valid_time_seconds }}"
 
-# Runs using letsencrypt's "deploy_hook" functionality, to format the certificate for the Unifi Controller,
-# import the certificate, and then restart the Unifi Controller
+# Runs using letsencrypt's "deploy_hook" functionality, to reload nginx
 - name: copy certificate installation script
   template:
-    src: unifi_deploy_hook.sh.j2
-    dest: /etc/letsencrypt/renewal-hooks/deploy/unifi_deploy_hook.sh
+    src: nginx_letsencrypt_deploy_hook.sh.j2
+    dest: /etc/letsencrypt/renewal-hooks/deploy/nginx_letsencrypt_deploy_hook.sh
     owner: root
     group: root
     mode: 0500
@@ -39,23 +47,18 @@
 
 # If this is the first runthrough, the cert directory doesn't exist yet.
 - name: check if live cert directory exists
-  stat: path=/etc/letsencrypt/live/{{ fqdn }}/fullchain.pem
+  stat: path=/etc/letsencrypt/live/{{ hostname }}/fullchain.pem
   register: cert_file
 
 # Better to fail fast here, rather than later when actually trying to get a certificate
-- name: perform test dns lookup of {{ fqdn }}
-  command: dig {{ fqdn }} +short
+- name: perform test dns lookup of {{ hostname }}
+  command: dig {{ hostname }} +short
   changed_when: false
   register: fqdn_dns_result
   when: cert_file.stat.exists == False
 
-- name: fail if dns lookup of {{ fqdn }} is not {{ public_ip }}
-  fail:
-    msg: dns lookup of {{ fqdn }} was not equal to {{ public_ip }}, got '{{ fqdn_dns_result.stdout }}' instead
-  when: cert_file.stat.exists == False and fqdn_dns_result.stdout != public_ip
-
 # Note: Add "--test-cert" to this command to test using Let's Encrypt staging server instead (no rate limit).
-- name: get initial letsencrypt certificate for {{ fqdn }}
-  command: certbot certonly -n -d {{ fqdn }} -m {{ letsencrypt_email }} --agree-tos --standalone
+- name: get initial letsencrypt certificate for {{ hostname }}
+  command: certbot certonly -n -d {{ hostname }} -m {{ letsencrypt_email }} --agree-tos --webroot -w /var/www/letsencrypt
   when: cert_file.stat.exists == False
   notify: run letsencrypt deploy hook

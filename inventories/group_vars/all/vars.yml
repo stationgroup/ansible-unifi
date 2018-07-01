@@ -1,0 +1,27 @@
+---
+ansible_user: root
+
+interactive_user: "{{ ansible_user }}"
+
+hostname: "{{ inventory_hostname }}"
+
+ansible_become: yes
+ansible_become_user: root
+
+ansible_python_interpreter: python3.5
+
+apt_cache_valid_time_seconds: 3600 # 1 hour
+
+swap_file_size: 2G
+swap_file: /swapfile
+swappiness: "1"
+
+run_dir_size: 500M
+
+backup_borg_repo_path: unifi-backups/{{ hostname }}.borg
+
+backup_host: '{{ vault_backup_host }}'
+
+backup_host_key: '{{ vault_backup_host_key }}'
+
+letsencrypt_email: '{{ vault_letsencrypt_email }}'

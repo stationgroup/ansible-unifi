@@ -1,0 +1,13 @@
+---
+
+- name: allow tcp port 80 (http)
+  ufw:
+    rule: allow
+    port: 80
+    proto: tcp
+
+- name: allow tcp port 443 (https)
+  ufw:
+    rule: allow
+    port: 443
+    proto: tcp

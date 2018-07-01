@@ -19,7 +19,7 @@
     name: mongodb-org
     state: present
     update_cache: yes
-    cache_valid_time: "{{ apt_cache_valid_time }}"
+    cache_valid_time: "{{ apt_cache_valid_time_seconds }}"
   environment:
     # Do not start at the end of install, it is started automatically when Unifi controller starts.
     # The system mongodb service will be disabled (see next task) from starting on its own.

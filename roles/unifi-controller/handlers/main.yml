@@ -9,9 +9,9 @@
 
 - name: wait for unifi controller to be healthy
   wait_for:
-    timeout: 60
+    timeout: 1
     port: 8443
-
-# Must be run once, manually, after doing the initial certificate request
-- name: run letsencrypt deploy hook
-  command: /etc/letsencrypt/renewal-hooks/deploy/unifi_deploy_hook.sh
+  register: result
+  until: result is succeeded
+  retries: 60
+  delay: 1

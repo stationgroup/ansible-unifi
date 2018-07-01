@@ -5,7 +5,7 @@
     name: software-properties-common
     state: present
     update_cache: yes
-    cache_valid_time: "{{ apt_cache_valid_time }}"
+    cache_valid_time: "{{ apt_cache_valid_time_seconds }}"
 
 - name: add apt ppa required for borg
   apt_repository:
@@ -16,7 +16,7 @@
     name: borgbackup
     state: present
     update_cache: yes
-    cache_valid_time: "{{ apt_cache_valid_time }}"
+    cache_valid_time: "{{ apt_cache_valid_time_seconds }}"
 
 # Do the backups as root rather than unifi, because it's more likely that the unifi user
 # will be compromised, since that's what the unifi controller runs as.

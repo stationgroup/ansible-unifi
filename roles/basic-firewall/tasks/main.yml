@@ -1,0 +1,16 @@
+---
+
+- name: allow tcp port 22 (ssh)
+  ufw:
+    rule: allow
+    port: 22
+    proto: tcp
+
+- name: set default deny and enable firewall
+  ufw:
+    state: enabled
+    policy: deny
+
+- name: Disable chatty ufw logging
+  ufw:
+    logging: off

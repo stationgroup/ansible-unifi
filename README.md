@@ -27,29 +27,22 @@ This will prompt you for a borg repo passphrase.  Enter the one you just created
 
 The server automation will check that this repo is accessible.
 
-## Add ansible-vault password file:
-Create a file called `unifi-ansible.vault` with the required vault password.
+## Manage encrypted variables
+Create a file called `~/.ansible/unifi.vault` with the required vault password.
 
 This enables access to encrypted data in ansible variables.
 
-It is in `.gitignore` to avoid accidentally putting it in source control.
+Use `ansible-vault encrypt` and `ansible-vault decrypt` to encrypt and decrypt `_vault.yml` files.
 
 ## Define hosts and variables
-Add target host to `hosts.yml`, and create a new `host_vars/myhost.yml` file.
-
-Encrypt necessary data using (for example):
-```
-ansible-vault encrypt_string --vault-id unifi-ansible.vault --stdin-name public_ip
-```
-
-Press Control-D twice to end input.
+Add hosts and variables to the `inventories` dir.
 
 ## Create SSH key (for connecting to backup server)
 
 Run this small playbook that only generates an ssh key for the root user.
 
 ```
-ansible-playbook root-ssh-key.yml -i hosts.yml --vault-id unifi-ansible.vault --extra-vars "target=mytarget"
+ansible-playbook plays/root-ssh-key.yml -i inventories/my_inventory
 ```
 
 The SSH public key will be displayed.  Manually add it to `authorized_keys` on
@@ -57,5 +50,5 @@ the backup server, so backups can run programmatically.
 
 ## Configure the server:
  ```
-ansible-playbook unifi-controller.yml -i hosts.yml --vault-id unifi-ansible.vault --extra-vars "target=mytarget"
+ansible-playbook plays/unifi-controller.yml -i inventories/my_inventory
 ```

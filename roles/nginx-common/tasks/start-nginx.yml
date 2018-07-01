@@ -1,0 +1,8 @@
+---
+
+- name: start nginx
+  service:
+    name: nginx
+    state: started
+  notify:
+    - wait for nginx to be healthy

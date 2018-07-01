@@ -1,0 +1,8 @@
+---
+
+backup_host_username: 9943
+
+borg_backup_repo_passphrase: '{{ vault_borg_backup_repo_passphrase }}'
+
+unifi_version: 5.8.24
+unifi_sha256: 73fc18daa66db862d4edeb3b6bd4870cab810c6b4af9a13bde1373fd9cd67025

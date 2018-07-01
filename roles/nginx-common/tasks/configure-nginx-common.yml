@@ -1,0 +1,59 @@
+---
+
+- name: copy main nginx configuration file
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: nginx
+    mode: 0440
+  notify:
+    - restart nginx
+
+- name: copy nginx-ssl configuration file
+  template:
+    src: nginx-ssl.conf.j2
+    dest: /etc/nginx/nginx-ssl.conf
+    owner: root
+    group: nginx
+    mode: 0440
+  notify:
+    - restart nginx
+
+- name: create nginx sites-available dir
+  file:
+    path: /etc/nginx/sites-available/
+    state: directory
+    recurse: yes
+    owner: root
+    group: nginx
+    mode: 0440
+
+- name: create nginx sites-enabled dir
+  file:
+    path: /etc/nginx/sites-enabled/
+    state: directory
+    recurse: yes
+    owner: root
+    group: nginx
+    mode: 0440
+
+- name: copy default nginx site configuration to sites-available
+  template:
+    src: default-site.conf.j2
+    dest: /etc/nginx/sites-available/default-site.conf
+    owner: root
+    group: nginx
+    mode: 0440
+  notify:
+    - restart nginx
+
+- name: symlink default nginx site configuration into sites-enabled
+  file:
+    src: /etc/nginx/sites-available/default-site.conf
+    dest: /etc/nginx/sites-enabled/default-site.conf
+    owner: root
+    group: nginx
+    state: link
+  notify:
+    - restart nginx

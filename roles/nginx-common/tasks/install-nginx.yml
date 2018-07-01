@@ -1,0 +1,24 @@
+---
+
+- name: add apt key for nginx mirrors
+  apt_key:
+    id: ABF5BD827BD9BF62
+    keyserver: keyserver.ubuntu.com
+
+- name: add nginx apt repository
+  apt_repository:
+    repo: >
+      deb https://nginx.org/packages/mainline/ubuntu/ xenial nginx
+    update_cache: yes
+
+- name: install nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid_time_seconds }}"
+  notify:
+    - restart nginx
+  environment:
+    # Do not start automatically at the end of install, so we can configure appropriately.
+    RUNLEVEL: 1

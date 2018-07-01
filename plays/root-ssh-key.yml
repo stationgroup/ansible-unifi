@@ -1,8 +1,8 @@
 ---
 # Playbook to generate an ssh key and display the public key, so it can be installed on the backup server.
 
-- name: Generate ssh key for {{ target }}
-  hosts: '{{ target }}'
+- name: Generate ssh key for unifi
+  hosts: unifi
   gather_facts: yes
 
   tasks:
