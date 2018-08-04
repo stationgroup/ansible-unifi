@@ -1,0 +1,8 @@
+---
+
+borg_backup_repo_path: unifi-backups/{{ hostname }}.borg
+
+borg_backup_host: '{{ vault_borg_backup_host }}'
+
+borg_backup_host_key: '{{ vault_borg_backup_host_key }}'
+

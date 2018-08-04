@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# {{ ansible_managed }}
+
+set -e
+
+letsencrypt_dir=/etc/letsencrypt
+
+rm -rf $letsencrypt_dir/live/*
+rm -rf $letsencrypt_dir/archive/*
+rm -rf $letsencrypt_dir/renewal/*

@@ -39,26 +39,8 @@
 # Helper script in case we need to debug certificates, allows easy purging of certificate from letsencrypt dir.
 - name: copy purge certificate utility script for debugging
   template:
-    src: purge_certificate.sh.j2
-    dest: /root/purge_certificate.sh
+    src: purge_certificates.sh.j2
+    dest: /root/purge_certificates.sh
     owner: root
     group: root
     mode: 0500
-
-# If this is the first runthrough, the cert directory doesn't exist yet.
-- name: check if live cert directory exists
-  stat: path=/etc/letsencrypt/live/{{ hostname }}/fullchain.pem
-  register: cert_file
-
-# Better to fail fast here, rather than later when actually trying to get a certificate
-- name: perform test dns lookup of {{ hostname }}
-  command: dig {{ hostname }} +short
-  changed_when: false
-  register: fqdn_dns_result
-  when: cert_file.stat.exists == False
-
-# Note: Add "--test-cert" to this command to test using Let's Encrypt staging server instead (no rate limit).
-- name: get initial letsencrypt certificate for {{ hostname }}
-  command: certbot certonly -n -d {{ hostname }} -m {{ letsencrypt_email }} --agree-tos --webroot -w /var/www/letsencrypt
-  when: cert_file.stat.exists == False
-  notify: run letsencrypt deploy hook

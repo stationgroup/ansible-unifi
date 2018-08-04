@@ -1,0 +1,98 @@
+
+# {{ ansible_managed }}
+
+# Redirect any of the following:
+#
+# http://{{ web_hosted_site }}
+# http://{{ www_hosted_site }}
+# http://{{ root_hosted_site }}
+#
+# to the HTTPS equivalent
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ web_hosted_site }} {{ www_hosted_site }} {{ root_hosted_site }};
+
+    return 301 https://$host$request_uri;
+}
+
+# Redirect any of the following:
+#
+# https://{{ root_hosted_site }}
+# https://{{ www_hosted_site }}
+#
+# to https://{{ web_hosted_site }}
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+
+    server_name {{ root_hosted_site }} {{ www_hosted_site }};
+
+    include /etc/nginx/nginx-ssl.conf;
+    include /etc/nginx/nginx-ssl-stapling.conf;
+    ssl_certificate /etc/letsencrypt/live/{{ web_hosted_site }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ web_hosted_site }}/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/{{ web_hosted_site }}/chain.pem;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    return 301 https://{{ web_hosted_site }}$request_uri;
+}
+
+# Expires map
+map $sent_http_content_type $expires {
+  default                    off;
+  text/html                  off;
+  text/css                   max;
+  application/javascript     max;
+}
+
+# Deliver content on https://{{ web_hosted_site }}
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+
+    server_name {{ web_hosted_site }};
+
+    include /etc/nginx/nginx-ssl.conf;
+    include /etc/nginx/nginx-ssl-stapling.conf;
+    ssl_certificate /etc/letsencrypt/live/{{ web_hosted_site }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ web_hosted_site }}/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/{{ web_hosted_site }}/chain.pem;
+
+    # Redirect root to home
+    rewrite  ^/(\?.*)?$ /home$1 permanent;
+
+    # Remove .html extension
+    rewrite ^(/.*)\.html(\?.*)?$ $1$2 permanent;
+
+    # Remove trailing slash
+    rewrite ^/(.*)/$ /$1 permanent;
+
+    try_files $uri.html $uri =404;
+
+    set $CSP "";
+    set $CSP "${CSP}default-src 'none'; ";
+    set $CSP "${CSP}frame-ancestors 'none'; ";
+    set $CSP "${CSP}form-action 'none'; ";
+    set $CSP "${CSP}base-uri 'self'; ";
+    set $CSP "${CSP}style-src 'self'; ";
+    set $CSP "${CSP}img-src 'self'; ";
+    add_header Content-Security-Policy $CSP always;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Xss-Protection "1; mode=block" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header Expect-Ct "enforce, max-age=86400" always;
+
+    expires $expires;
+
+    root /var/www/{{ web_hosted_site }};
+    allow all;
+
+    gzip on;
+    gzip_min_length 1;
+    gzip_types text/plain application/x-javascript text/xml text/css;
+    gzip_vary on;
+}

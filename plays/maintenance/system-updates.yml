@@ -1,0 +1,20 @@
+---
+# Play, to be run periodically, which performs any required system updates
+
+- name: Run system updates
+  # Must specify a host (or hosts, groups, etc...) with --extra_vars "target=mytarget"
+  hosts: '{{ target }}'
+  gather_facts: no
+
+  tasks:
+  - import_role:
+      name: apt-upgrade
+    tags:
+      - apt-upgrade
+
+  - import_role:
+      name: reboot-server
+    vars:
+      check_reboot_required: true
+    tags:
+      - reboot-server

@@ -1,0 +1,9 @@
+---
+
+- import_tasks: letsencrypt-personal-web.yml
+  tags:
+    - letsencrypt-personal-web
+
+- import_tasks: configure-personal-web-nginx.yml
+  tags:
+    - configure-personal-web-nginx

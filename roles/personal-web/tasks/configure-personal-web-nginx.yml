@@ -1,0 +1,21 @@
+---
+
+- name: copy personal_web nginx configuration to sites-available
+  template:
+    src: nginx/personal_web_nginx.conf.j2
+    dest: /etc/nginx/sites-available/personal_web_nginx.conf
+    owner: root
+    group: nginx
+    mode: 0440
+  notify:
+    - restart nginx
+
+- name: symlink personal_web nginx configuration into sites-enabled
+  file:
+    src: /etc/nginx/sites-available/personal_web_nginx.conf
+    dest: /etc/nginx/sites-enabled/personal_web_nginx.conf
+    owner: root
+    group: nginx
+    state: link
+  notify:
+    - restart nginx

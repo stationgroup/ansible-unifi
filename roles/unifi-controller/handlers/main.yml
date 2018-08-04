@@ -15,3 +15,15 @@
   until: result is succeeded
   retries: 60
   delay: 1
+
+- name: restart nginx
+  service:
+    name: nginx
+    state: restarted
+  notify:
+    - wait for nginx to be healthy
+
+- name: wait for nginx to be healthy
+  wait_for:
+    timeout: 60
+    port: 80

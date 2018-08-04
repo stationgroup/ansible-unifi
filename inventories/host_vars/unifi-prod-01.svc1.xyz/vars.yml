@@ -1,6 +1,6 @@
 ---
 
-backup_host_username: 9944
+borg_backup_host_username: 9944
 
 borg_backup_repo_passphrase: '{{ vault_borg_backup_repo_passphrase }}'
 

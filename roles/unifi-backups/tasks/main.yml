@@ -31,8 +31,8 @@
 
 - name: add backup server to known_hosts
   known_hosts:
-    name: "{{ backup_host }}"
-    key: "{{ backup_host_key }}"
+    name: "{{ borg_backup_host }}"
+    key: "{{ borg_backup_host_key }}"
     state: present
 
 # Actually creating the borg backup repo is a critical administrative task and
@@ -42,7 +42,7 @@
     BORG_PASSCOMMAND="cat /root/.borg-passphrase"
     BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
     borg info --remote-path=borg1
-    {{ backup_host_username | quote }}@{{ backup_host | quote }}:{{ backup_borg_repo_path | quote }}
+    {{ borg_backup_host_username | quote }}@{{ borg_backup_host | quote }}:{{ borg_backup_repo_path | quote }}
   changed_when: false
 
 - name: get unifi user homedir to locate autobackup files
@@ -63,7 +63,7 @@
       BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
       BORG_PASSCOMMAND="cat /root/.borg-passphrase"
       borg create --remote-path=borg1 --stats --compression none
-      {{ backup_host_username | quote }}@{{ backup_host | quote }}:{{ backup_borg_repo_path | quote }}::{now:\%Y\%m\%dT\%H\%M\%S} .
+      {{ borg_backup_host_username | quote }}@{{ borg_backup_host | quote }}:{{ borg_backup_repo_path | quote }}::{now:\%Y\%m\%dT\%H\%M\%S} .
       2>&1 | /usr/bin/logger -t unifi_borg_backup
 
 # TODO: Schedule monthly-ish borg prune to delete old backups.

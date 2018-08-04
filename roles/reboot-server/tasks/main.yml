@@ -1,0 +1,26 @@
+---
+
+- name: check whether reboot is required
+  stat:
+    path: /var/run/reboot-required
+  when: check_reboot_required
+  register: reboot_required_file
+
+- name: register should_reboot_server
+  set_fact:
+    should_reboot_server: '{{ not (check_reboot_required | bool) or ((reboot_required_file.stat | default({})).exists | default(false)) }}'
+
+- name: reboot server
+  shell: sleep 2 && shutdown -r now "reboot triggered by Ansible"
+  async: 1
+  poll: 0
+  when: should_reboot_server
+  register: reboot_server_result
+
+- name: wait for reboot to complete
+  wait_for_connection:
+    connect_timeout: 5
+    sleep: 2
+    delay: 5
+    timeout: 300
+  when: reboot_server_result.changed

@@ -1,5 +1,5 @@
 ---
-# Playbook to generate an ssh key and display the public key, so it can be installed on the backup server.
+# Playbook to generate an ssh key and display the public key, so it can be installed on the borg backup server.
 
 - name: Generate ssh key for unifi
   hosts: unifi

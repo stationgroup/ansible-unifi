@@ -3,79 +3,87 @@
 # Proxy https://{{ hostname }} to Unifi
 
 upstream unifi_web {
-  server 127.0.0.1:8443;
+    server 127.0.0.1:8443;
 }
 
 upstream unifi_inform {
-  server 127.0.0.1:8080;
+    server 127.0.0.1:8080;
 }
 
 server {
-  listen 443 ssl http2;
+    listen 443 ssl http2;
 
-  include /etc/nginx/nginx-ssl.conf;
+    include /etc/nginx/nginx-ssl.conf;
+    include /etc/nginx/nginx-ssl-stapling.conf;
+    ssl_certificate /etc/letsencrypt/live/{{ hostname }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ hostname }}/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/{{ hostname }}/chain.pem;
 
-  server_name {{ hostname }};
+    server_name {{ hostname }};
 
-  access_log /var/log/unifi/unifi-web-nginx-access.log;
-  error_log /var/log/unifi/unifi-web-nginx-error.log;
+    access_log /var/log/unifi/unifi-web-nginx-access.log;
+    error_log /var/log/unifi/unifi-web-nginx-error.log;
 
-  location ^~ /.well-known/acme-challenge/ {
-      default_type "text/plain";
-      root /var/www/letsencrypt;
-  }
+    add_header Strict-Transport-Security "max-age=31536000" always;
 
-  location /robots.txt {return 200 "User-agent: *\nDisallow: /\n";}
+    location ^~ /.well-known/acme-challenge/ {
+        default_type "text/plain";
+        root /var/www/letsencrypt;
+    }
 
-  location / {
-    proxy_pass https://unifi_web;
-    proxy_redirect  https://unifi_web/ /;
-    proxy_buffering off;
+    location /robots.txt {return 200 "User-agent: *\nDisallow: /\n";}
 
-    proxy_read_timeout 60s;
+    client_max_body_size 100M;
 
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    location / {
+        proxy_pass https://unifi_web;
+        proxy_redirect  https://unifi_web/ /;
+        proxy_buffering off;
 
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "Upgrade";
-  }
+        proxy_read_timeout 60s;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+    }
 }
 
 server {
-  listen 80;
+    listen 80;
 
-  server_name {{ hostname }};
+    server_name {{ hostname }};
 
-  access_log /var/log/unifi/unifi-inform-nginx-access.log;
-  error_log /var/log/unifi/unifi-inform-nginx-error.log;
+    access_log /var/log/unifi/unifi-inform-nginx-access.log;
+    error_log /var/log/unifi/unifi-inform-nginx-error.log;
 
-  location /robots.txt {return 200 "User-agent: *\nDisallow: /\n";}
+    location ^~ /.well-known/acme-challenge/ {
+        default_type "text/plain";
+        root /var/www/letsencrypt;
+    }
 
-  location /inform {
-    proxy_pass http://unifi_inform;
-    proxy_redirect  http://unifi_inform/ /;
-    proxy_buffering off;
+    location /robots.txt {return 200 "User-agent: *\nDisallow: /\n";}
 
-    proxy_read_timeout 60s;
+    location /inform {
+        proxy_pass http://unifi_inform;
+        proxy_redirect  http://unifi_inform/ /;
+        proxy_buffering off;
 
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 60s;
 
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "Upgrade";
-  }
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
-  location ^~ /.well-known/acme-challenge/ {
-      default_type "text/plain";
-      root /var/www/letsencrypt;
-  }
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+    }
 
-  location / {
-    return 301 https://{{ hostname }}$request_uri;
-  }
+    location / {
+        return 301 https://{{ hostname }}$request_uri;
+    }
 }

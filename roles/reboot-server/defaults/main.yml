@@ -1,0 +1,4 @@
+---
+
+# Whether to check the /var/run/reboot-required file to determine whether reboot is needed
+check_reboot_required: false

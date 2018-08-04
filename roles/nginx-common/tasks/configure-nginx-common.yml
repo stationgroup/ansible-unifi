@@ -20,6 +20,40 @@
   notify:
     - restart nginx
 
+- name: copy nginx-ssl-stapling configuration file
+  template:
+    src: nginx-ssl-stapling.conf.j2
+    dest: /etc/nginx/nginx-ssl-stapling.conf
+    owner: root
+    group: nginx
+    mode: 0440
+  notify:
+    - restart nginx
+
+- name: Ensures nginx default self-signed ssl dir exists
+  file:
+    path: /etc/nginx/ssl/
+    state: directory
+    mode: 0700
+
+- name: check if default self-signed invalid certificate key exists
+  stat: path=/etc/nginx/ssl/default_cert.key
+  register: default_key
+
+- name: check if default self-signed invalid certificate exists
+  stat: path=/etc/nginx/ssl/default_cert.crt
+  register: default_cert
+
+- name: generate default self-signed invalid certificate
+  command: >
+    openssl req -x509 -nodes -days 3650 -newkey rsa:2048
+    -keyout /etc/nginx/ssl/default_cert.key
+    -out /etc/nginx/ssl/default_cert.crt
+    -subj "/CN=invalid.invalid/O=Invalid"
+  when: default_key.stat.exists == False and default_cert.stat.exists == False
+  notify:
+    - restart nginx
+
 - name: create nginx sites-available dir
   file:
     path: /etc/nginx/sites-available/
@@ -29,6 +63,11 @@
     group: nginx
     mode: 0440
 
+- name: delete bundled nginx default site from sites-available if it exists
+  file:
+    path: /etc/nginx/sites-available/default
+    state: absent
+
 - name: create nginx sites-enabled dir
   file:
     path: /etc/nginx/sites-enabled/
@@ -37,6 +76,11 @@
     owner: root
     group: nginx
     mode: 0440
+
+- name: delete bundled nginx default site from sites-enabled if it exists
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
 
 - name: copy default nginx site configuration to sites-available
   template:

@@ -1,0 +1,17 @@
+---
+
+# If this is the first runthrough, the cert directory doesn't exist yet.
+- name: check if {{ web_hosted_site }} live cert directory exists
+  stat: path=/etc/letsencrypt/live/{{ web_hosted_site }}/fullchain.pem
+  register: web_cert_file
+
+# Note: Add "--test-cert" to this command to test using Let's Encrypt staging server instead (no rate limit).
+- name: get initial letsencrypt certificate for {{ web_hosted_site }}, {{ root_hosted_site }}, and {{ www_hosted_site }}
+  command: >
+    certbot certonly -n
+    -d {{ web_hosted_site }}
+    -d {{ root_hosted_site }}
+    -d {{ www_hosted_site }}
+    -m {{ letsencrypt_email }} --agree-tos --standalone
+  when: web_cert_file.stat.exists == False
+  notify: restart nginx

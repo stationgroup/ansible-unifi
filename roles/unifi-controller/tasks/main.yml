@@ -8,6 +8,10 @@
   tags:
     - install-controller
 
+- import_tasks: letsencrypt-unifi.yml
+  tags:
+    - letsencrypt-unifi
+
 - import_tasks: configure-unifi-controller-nginx.yml
   tags:
     - configure-unifi-controller-nginx

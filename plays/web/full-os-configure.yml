@@ -1,0 +1,37 @@
+---
+# Playbook to configure an Ubuntu system to host websites.
+
+- name: Configure OS for web
+  hosts: web
+  gather_facts: no
+
+  tasks:
+  - import_role:
+      name: basic-firewall
+    tags:
+      - basic-firewall
+
+  - import_role:
+      name: hostname
+    tags:
+      - hostname
+
+  - import_role:
+      name: os-performance
+    tags:
+      - os-performance
+
+  - import_role:
+      name: apt-convenience-packages
+    tags:
+      - apt-convenience-packages
+
+  - import_role:
+      name: nginx-common
+    tags:
+      - nginx-common
+
+  - import_role:
+      name: personal-web
+    tags:
+      - personal-web
